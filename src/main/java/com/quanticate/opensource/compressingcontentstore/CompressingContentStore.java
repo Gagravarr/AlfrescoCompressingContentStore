@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.alfresco.repo.content.ContentContext;
 import org.alfresco.repo.content.ContentStore;
-import org.alfresco.repo.content.ContentStore.ContentUrlHandler;
 import org.alfresco.service.cmr.repository.ContentIOException;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentWriter;
@@ -71,7 +70,7 @@ public class CompressingContentStore implements ContentStore, InitializingBean
       ContentReader reader = realContentStore.getReader(contentUrl);
       if (shouldCompress(reader))
       {
-         return decompressIfRequired(reader);
+         return new DecompressingContentReader(reader);
       }
       
       // Use the content reader onto the main store
@@ -86,7 +85,7 @@ public class CompressingContentStore implements ContentStore, InitializingBean
       if (shouldCompress(existingContentReader))
       {
          // Should be compressed
-         return new CompressingContentWriter(realWriter);
+         return new CompressingContentWriter(realWriter, existingContentReader, compressionType);
       }
       else
       {
@@ -103,7 +102,7 @@ public class CompressingContentStore implements ContentStore, InitializingBean
       if (shouldCompress(existingContentReader))
       {
          // Should be compressed
-         return new CompressingContentWriter(realWriter);
+         return new CompressingContentWriter(realWriter, existingContentReader, compressionType);
       }
       else
       {
@@ -123,18 +122,6 @@ public class CompressingContentStore implements ContentStore, InitializingBean
          return true;
       }
       return false;
-   }
-
-   /**
-    * Checks for the compression header, and returns a decompressed
-    *  version if present.
-    * (Because content could have been stored before this module was
-    *  applied, some existing content could be uncompressed)
-    */
-   protected ContentReader decompressIfRequired(ContentReader reader)
-   {
-      // We need the first few hundred bytes to detect with
-      
    }
 
    

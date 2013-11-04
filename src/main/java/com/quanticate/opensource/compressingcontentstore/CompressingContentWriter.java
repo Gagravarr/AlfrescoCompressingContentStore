@@ -63,8 +63,7 @@ public class CompressingContentWriter extends AbstractContentWriter
    @Override
    protected ContentReader createReader() throws ContentIOException
    {
-      // TODO
-      return null;
+      return new DecompressingContentReader(realContentWriter.getReader());
    }
 
    @Override
