@@ -98,6 +98,7 @@ public class DecompressingContentReader extends AbstractContentReader
    {
       return realContentReader.getLastModified();
    }
+   
    @Override
    public long getSize()
    {

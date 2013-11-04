@@ -39,6 +39,7 @@
   <!-- The Bean ID must match what the real store normally has -->
   <bean id="fileContentStore" class="com.quanticate.opensource.compressingcontentstore.CompressingContentStore">
      <property name="realContentStore" ref="realFileContentStore" />
+     <property name="mimetypeService" ref="mimetypeService" />
      <property name="compressMimeTypes">
         <list>
           <value>text/plain</value>

@@ -23,6 +23,7 @@ import org.alfresco.repo.content.ContentStore;
 import org.alfresco.service.cmr.repository.ContentIOException;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentWriter;
+import org.alfresco.service.cmr.repository.MimetypeService;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,6 +40,8 @@ public class CompressingContentStore implements ContentStore, InitializingBean
    
    /** The real ContentStore to read/write from */
    private ContentStore realContentStore;
+   /** The MimeType Service, for ContentWriters to use */
+   private MimetypeService mimetypeService;
    /** Which mimetypes should be compressed */
    private List<String> compressMimeTypes;
    /** Which compression type to use */
@@ -61,6 +64,10 @@ public class CompressingContentStore implements ContentStore, InitializingBean
       if (realContentStore == null)
       {
          throw new IllegalArgumentException("'realContentStore' must be given");
+      }
+      if (mimetypeService == null)
+      {
+         throw new IllegalArgumentException("'mimetypeService' must be given");
       }
    }
 
@@ -198,6 +205,10 @@ public class CompressingContentStore implements ContentStore, InitializingBean
       return realContentStore.isWriteSupported();
    }
    
+   public void setMimetypeService(MimetypeService mimetypeService)
+   {
+      this.mimetypeService = mimetypeService;
+   }
    public void setRealContentStore(ContentStore realContentStore)
    {
       this.realContentStore = realContentStore;
