@@ -24,15 +24,17 @@ import org.alfresco.repo.content.ContentStore.ContentUrlHandler;
 import org.alfresco.service.cmr.repository.ContentIOException;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentWriter;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.InitializingBean;
 
 /**
  * A Content Store which compresses certain mimetypes
  *  transparently when writing/reading from a real
  *  {@link ContentStore}
  */
-public class CompressingContentStore implements ContentStore 
+public class CompressingContentStore implements ContentStore, InitializingBean
 {
    private static Log logger = LogFactory.getLog(CompressingContentStore.class);
    
@@ -40,7 +42,29 @@ public class CompressingContentStore implements ContentStore
    private ContentStore realContentStore;
    /** Which mimetypes should be compressed */
    private List<String> compressMimeTypes;
+   /** Which compression type to use */
+   private String compressionType;
    
+   @Override
+   public void afterPropertiesSet() throws Exception
+   {
+      // Compression type is optional, use GZip if in doubt
+      if (compressionType == null || compressionType.isEmpty())
+      {
+         compressionType = CompressorStreamFactory.GZIP;
+      }
+      
+      // Real Content Store and MimeTypes must be given
+      if (compressMimeTypes == null || compressMimeTypes.isEmpty())
+      {
+         throw new IllegalArgumentException("'compressMimeTypes' must be given");
+      }
+      if (realContentStore == null)
+      {
+         throw new IllegalArgumentException("'realContentStore' must be given");
+      }
+   }
+
    @Override
    public ContentReader getReader(String contentUrl)
    {
@@ -110,8 +134,7 @@ public class CompressingContentStore implements ContentStore
    protected ContentReader decompressIfRequired(ContentReader reader)
    {
       // We need the first few hundred bytes to detect with
-      // TODO
-      return null;
+      
    }
 
    
@@ -185,5 +208,9 @@ public class CompressingContentStore implements ContentStore
    public void setCompressMimeTypes(List<String> compressMimeTypes)
    {
       this.compressMimeTypes = compressMimeTypes;
+   }
+   public void setCompressionType(String compressionType)
+   {
+      this.compressionType = compressionType;
    }
 }
