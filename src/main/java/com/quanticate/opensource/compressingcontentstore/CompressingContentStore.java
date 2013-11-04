@@ -1,8 +1,12 @@
 package com.quanticate.opensource.compressingcontentstore;
 
+import java.util.Date;
 import java.util.List;
 
+import org.alfresco.repo.content.ContentContext;
 import org.alfresco.repo.content.ContentStore;
+import org.alfresco.repo.content.ContentStore.ContentUrlHandler;
+import org.alfresco.service.cmr.repository.ContentIOException;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentWriter;
 import org.apache.commons.logging.Log;
@@ -35,7 +39,29 @@ public class CompressingContentStore implements ContentStore
       // TODO Implement
       return null;
    }
+   
+   @Override
+   public ContentWriter getWriter(ContentContext arg0)
+   {
+      // TODO Implement
+      return null;
+   }
 
+   
+   // These just delegate to the real ContentStore
+
+   @Override
+   public void getUrls(ContentUrlHandler handler) 
+         throws ContentIOException
+   {
+      realContentStore.getUrls(handler);
+   }
+   @Override
+   public void getUrls(Date from, Date to, ContentUrlHandler handler)
+         throws ContentIOException
+   {
+      realContentStore.getUrls(from, to, handler);
+   }
    @Override
    public boolean delete(String contentUrl)
    {
@@ -50,44 +76,39 @@ public class CompressingContentStore implements ContentStore
    @Override
    public String getRootLocation()
    {
-      // TODO Auto-generated method stub
-      return null;
+      return realContentStore.getRootLocation();
    }
    @Override
    public long getSpaceFree()
    {
-      // TODO Auto-generated method stub
-      return 0;
+      return realContentStore.getSpaceFree();
    }
    @Override
    public long getSpaceTotal()
    {
-      // TODO Auto-generated method stub
-      return 0;
+      return realContentStore.getSpaceTotal();
    }
    @Override
+   @SuppressWarnings("deprecation")
    public long getSpaceUsed()
    {
-      // TODO Auto-generated method stub
-      return 0;
+      return realContentStore.getSpaceUsed();
    }
    @Override
+   @SuppressWarnings("deprecation")
    public long getTotalSize()
    {
-      // TODO Auto-generated method stub
-      return 0;
+      return realContentStore.getTotalSize();
    }
    @Override
-   public boolean isContentUrlSupported(String arg0)
+   public boolean isContentUrlSupported(String contentUrl)
    {
-      // TODO Auto-generated method stub
-      return false;
+      return realContentStore.isContentUrlSupported(contentUrl);
    }
    @Override
    public boolean isWriteSupported()
    {
-      // TODO Auto-generated method stub
-      return false;
+      return realContentStore.isWriteSupported();
    }
    
    public void setRealContentStore(ContentStore realContentStore)
