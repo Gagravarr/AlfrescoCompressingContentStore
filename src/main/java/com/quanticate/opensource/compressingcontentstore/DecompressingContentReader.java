@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Locale;
 
 import org.alfresco.repo.content.AbstractContentReader;
 import org.alfresco.service.cmr.repository.ContentIOException;
@@ -64,6 +65,7 @@ public class DecompressingContentReader extends AbstractContentReader
       {
          CompressorInputStream decompressed = new CompressorStreamFactory()
                 .createCompressorInputStream(rawInp);
+         logger.debug("Detected compressed data as " + decompressed.getClass().getName());
          return Channels.newChannel(decompressed);
       }
       catch (CompressorException e)
@@ -81,6 +83,8 @@ public class DecompressingContentReader extends AbstractContentReader
       {
          logger.warn("Error tidying up", e);
       }
+      
+      logger.debug("Using raw form for " + getContentUrl());
       return realContentReader.getReadableChannel();
    }
    
@@ -98,5 +102,24 @@ public class DecompressingContentReader extends AbstractContentReader
    public long getSize()
    {
       return -1L;
+   }
+
+   @Override
+   public void setEncoding(String encoding)
+   {
+      super.setEncoding(encoding);
+      realContentReader.setEncoding(encoding);
+   }
+   @Override
+   public void setLocale(Locale locale)
+   {
+      super.setLocale(locale);
+      realContentReader.setLocale(locale);
+   }
+   @Override
+   public void setMimetype(String mimetype)
+   {
+      super.setMimetype(mimetype);
+      realContentReader.setMimetype(mimetype);
    }
 }

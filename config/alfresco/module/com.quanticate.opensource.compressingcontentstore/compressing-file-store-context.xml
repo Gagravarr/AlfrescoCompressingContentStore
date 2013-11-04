@@ -8,19 +8,38 @@
   <!--  the definition in your version of Alfresco -->
 
   <!-- The "real" File Content Store -->
+  <!-- This is taken from Alfresco 4.1, with the Bean ID changed -->
+  <bean id="realFileContentStore" class="org.alfresco.repo.content.filestore.FileContentStore">
+     <constructor-arg>
+        <value>${dir.contentstore}</value>
+     </constructor-arg>
+
+     <!-- Uncomment the property below to add content filesize limit.
+     <property name="contentLimitProvider" ref="defaultContentLimitProvider"/>
+     -->
+  </bean>
   <!-- This is taken from Alfresco 4.0, with the Bean ID changed -->
+<!--
   <bean id="realFileContentStore" class="org.alfresco.repo.content.filestore.FileContentStore">
      <constructor-arg>
         <value>${dir.contentstore}</value>
      </constructor-arg>
   </bean>
+-->
+  <!-- This is taken from Alfresco 4.1 MT, with the Bean ID changed -->
+<!--
+  <bean id="realFileContentStore" class="org.alfresco.repo.tenant.TenantRoutingFileContentStore" parent="baseTenantRoutingContentStore">
+     <property name="rootLocation" value="${dir.contentstore}" />
+     <property name="contentLimitProvider" ref="defaultContentLimitProvider"/>
+  </bean>
+-->
 
   <!-- The compressing wrapper -->
   <!-- This compresses if needed, then passes to the real Content Store -->
   <!-- The Bean ID must match what the real store normally has -->
   <bean id="fileContentStore" class="com.quanticate.opensource.compressingcontentstore.CompressingContentStore">
      <property name="realContentStore" ref="realFileContentStore" />
-     <property name="compressedMimeTypes">
+     <property name="compressMimeTypes">
         <list>
           <value>text/plain</value>
           <value>text/html</value>

@@ -18,6 +18,7 @@ package com.quanticate.opensource.compressingcontentstore;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.util.Locale;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.repo.content.AbstractContentWriter;
@@ -87,5 +88,24 @@ public class CompressingContentWriter extends AbstractContentWriter
       {
          throw new AlfrescoRuntimeException("Error compressing", e);
       }
+   }
+
+   @Override
+   public void setEncoding(String encoding)
+   {
+      super.setEncoding(encoding);
+      realContentWriter.setEncoding(encoding);
+   }
+   @Override
+   public void setLocale(Locale locale)
+   {
+      super.setLocale(locale);
+      realContentWriter.setLocale(locale);
+   }
+   @Override
+   public void setMimetype(String mimetype)
+   {
+      super.setMimetype(mimetype);
+      realContentWriter.setMimetype(mimetype);
    }
 }
