@@ -15,39 +15,36 @@
 ==================================================================== */
 package com.quanticate.opensource.compressingcontentstore;
 
-import java.io.File;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
-import org.alfresco.repo.content.ContentContext;
-import org.alfresco.repo.content.ContentStore;
-import org.alfresco.repo.content.ContentStore.ContentUrlHandler;
+import org.alfresco.error.AlfrescoRuntimeException;
+import org.alfresco.repo.content.AbstractContentWriter;
 import org.alfresco.service.cmr.repository.ContentIOException;
 import org.alfresco.service.cmr.repository.ContentReader;
-import org.alfresco.service.cmr.repository.ContentStreamListener;
 import org.alfresco.service.cmr.repository.ContentWriter;
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorOutputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * A Content Store which compresses certain mimetypes
- *  transparently when writing/reading from a real
- *  {@link ContentStore}
+ * A Content Writer which compresses data as it writes
+ *  into the real Writer
  */
-public class CompressingContentWriter implements ContentWriter 
+public class CompressingContentWriter extends AbstractContentWriter 
 {
    private static Log logger = LogFactory.getLog(CompressingContentWriter.class);
    
    private ContentWriter realContentWriter;
    private String compressionType;
    
-   public CompressingContentWriter(ContentWriter realContentWriter, String compressionType)
+   public CompressingContentWriter(ContentWriter realContentWriter, 
+         ContentReader existingContentReader, String compressionType)
    {
+      super(realContentWriter.getContentUrl(), existingContentReader);
       this.realContentWriter = realContentWriter;
       this.compressionType = compressionType;
    }
@@ -56,132 +53,40 @@ public class CompressingContentWriter implements ContentWriter
    {
       return compressionType;
    }
-   
-   @Override
-   public boolean isChannelOpen()
-   {
-   }
 
-   @Override
-   public boolean isClosed()
-   {
-      // TODO Auto-generated method stub
-      return false;
-   }
-   
-   @Override
-   public OutputStream getContentOutputStream() throws ContentIOException
-   {
-      // TODO Auto-generated method stub
-      return null;
-   }
-
-   @Override
-   public FileChannel getFileChannel(boolean arg0) throws ContentIOException
-   {
-      // TODO Auto-generated method stub
-      return null;
-   }
-
-   @Override
-   public ContentReader getReader() throws ContentIOException
-   {
-      // TODO Auto-generated method stub
-      return null;
-   }
-
-   @Override
-   public WritableByteChannel getWritableChannel() throws ContentIOException
-   {
-      // TODO Auto-generated method stub
-      return null;
-   }
-
-   @Override
-   public void putContent(ContentReader arg0) throws ContentIOException
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   public void putContent(File arg0) throws ContentIOException
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   public void putContent(InputStream arg0) throws ContentIOException
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   public void putContent(String arg0) throws ContentIOException
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   public void addListener(ContentStreamListener listener)
-   {
-      realContentWriter.addListener(listener);
-   }
-   @Override
-   public String getContentUrl()
-   {
-      return realContentWriter.getContentUrl();
-   }
-   @Override
-   public String getEncoding()
-   {
-      return realContentWriter.getEncoding();
-   }
-   @Override
-   public Locale getLocale()
-   {
-      return realContentWriter.getLocale();
-   }
-   @Override
-   public String getMimetype()
-   {
-      return realContentWriter.getMimetype();
-   }
    @Override
    public long getSize()
    {
-      return realContentWriter.getSize();
-   }
-   
-   @Override
-   public void setEncoding(String encoding)
-   {
-      realContentWriter.setEncoding(encoding);
-   }
-   @Override
-   public void setLocale(Locale locale)
-   {
-      realContentWriter.setLocale(locale);
-   }
-   @Override
-   public void setMimetype(String mimetype)
-   {
-      realContentWriter.setMimetype(mimetype);
+      return -1L;
    }
 
    @Override
-   public void guessEncoding()
+   protected ContentReader createReader() throws ContentIOException
    {
-      // Not currently supported
-      return;
+      // TODO
+      return null;
    }
+
    @Override
-   public void guessMimetype(String filename)
+   protected WritableByteChannel getDirectWritableChannel()
+         throws ContentIOException
    {
-      // Not currently supported
-      return;
+      // Get the raw writer onto the real stream
+      OutputStream rawOut = realContentWriter.getContentOutputStream();
+      
+      try {
+         // Wrap that with the requested compression
+         CompressorOutputStream compOut = new CompressorStreamFactory()
+              .createCompressorOutputStream(compressionType, rawOut);
+
+         logger.info("Compressing " + realContentWriter.getContentUrl() + " with " + compressionType);
+
+         // Turn that into a channel and return
+         return Channels.newChannel(compOut);
+      }
+      catch (CompressorException e)
+      {
+         throw new AlfrescoRuntimeException("Error compressing", e);
+      }
    }
 }
