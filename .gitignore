@@ -1,6 +1,15 @@
+# Java Files #
 *.class
 
+# Vim Files #
+.*.swp
+
+# Eclipse Files #
+.classpath
+.project
+
 # Package Files #
-*.jar
 *.war
 *.ear
+/bin
+/build
