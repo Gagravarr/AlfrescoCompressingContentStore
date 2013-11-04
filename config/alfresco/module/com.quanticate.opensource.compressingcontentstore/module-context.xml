@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans.dtd'>
+ 
+<beans>
+    <!-- Import the real bean + compressing wrapper -->
+    <!-- By default, we work with a FileContentStore -->
+    <import reosurce="classpath*:alfresco/module/com.quanticate.opensource.compressingcontentstore/*-store-context.xml" />
+</beans>

@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans.dtd'>
+<beans>
+  <!-- This is an example of a Compressing Content Store -->
+  <!--  which is backed by a real FileContentStore -->
+  <!-- On the Compressing Store, specify the mimetypes to compress -->
+  <!-- On the real store, tweak the bean ID, and ensure it matches with -->
+  <!--  the definition in your version of Alfresco -->
+
+  <!-- The "real" File Content Store -->
+  <!-- This is taken from Alfresco 4.0, with the Bean ID changed -->
+  <bean id="realFileContentStore" class="org.alfresco.repo.content.filestore.FileContentStore">
+     <constructor-arg>
+        <value>${dir.contentstore}</value>
+     </constructor-arg>
+  </bean>
+
+  <!-- The compressing wrapper -->
+  <!-- This compresses if needed, then passes to the real Content Store -->
+  <!-- The Bean ID must match what the real store normally has -->
+  <bean id="fileContentStore" class="com.quanticate.opensource.compressingcontentstore.CompressingContentStore">
+     <property name="realContentStore" ref="realFileContentStore" />
+     <property name="compressedMimeTypes">
+        <list>
+          <value>text/plain</value>
+          <value>text/html</value>
+          <value>text/javascript</value>
+          <value>application/x-sas</value>
+          <value>application/x-sas-program-data</value>
+          <value>application/x-sas-audit</value>
+          <value>application/x-sas-data</value>
+          <value>application/x-sas-view</value>
+        </list>
+     </property>
+  </bean>
+</beans>
