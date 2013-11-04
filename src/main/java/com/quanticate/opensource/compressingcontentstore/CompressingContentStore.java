@@ -1,3 +1,18 @@
+/* ====================================================================
+  Copyright 2013 Quanticate Ltd
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+==================================================================== */
 package com.quanticate.opensource.compressingcontentstore;
 
 import java.util.Date;
@@ -29,21 +44,73 @@ public class CompressingContentStore implements ContentStore
    @Override
    public ContentReader getReader(String contentUrl)
    {
-      // TODO Implement
-      return null;
+      ContentReader reader = realContentStore.getReader(contentUrl);
+      if (shouldCompress(reader))
+      {
+         return decompressIfRequired(reader);
+      }
+      
+      // Use the content reader onto the main store
+      return reader;
    }
 
    @Override
+   @SuppressWarnings("deprecation")
    public ContentWriter getWriter(ContentReader existingContentReader, String newContentUrl)
    {
-      // TODO Implement
-      return null;
+      ContentWriter realWriter = realContentStore.getWriter(existingContentReader, newContentUrl);
+      if (shouldCompress(existingContentReader))
+      {
+         // Should be compressed
+         return new CompressingContentWriter(realWriter);
+      }
+      else
+      {
+         // Pass through unchanged to the real store
+         return realWriter;
+      }
    }
    
    @Override
-   public ContentWriter getWriter(ContentContext arg0)
+   public ContentWriter getWriter(ContentContext context)
    {
-      // TODO Implement
+      ContentReader existingContentReader = context.getExistingContentReader();
+      ContentWriter realWriter = realContentStore.getWriter(context);
+      if (shouldCompress(existingContentReader))
+      {
+         // Should be compressed
+         return new CompressingContentWriter(realWriter);
+      }
+      else
+      {
+         // Pass through unchanged to the real store
+         return realWriter;
+      }
+   }
+   
+   /**
+    * Should the content be compressed?
+    * This will be based on the Mime Type set on the reader
+    */
+   protected boolean shouldCompress(ContentReader reader)
+   {
+      if (reader.getMimetype() != null && compressMimeTypes.contains(reader.getMimetype()))
+      {
+         return true;
+      }
+      return false;
+   }
+
+   /**
+    * Checks for the compression header, and returns a decompressed
+    *  version if present.
+    * (Because content could have been stored before this module was
+    *  applied, some existing content could be uncompressed)
+    */
+   protected ContentReader decompressIfRequired(ContentReader reader)
+   {
+      // We need the first few hundred bytes to detect with
+      // TODO
       return null;
    }
 
