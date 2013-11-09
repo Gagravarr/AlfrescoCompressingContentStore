@@ -15,6 +15,7 @@
 ==================================================================== */
 package com.quanticate.opensource.compressingcontentstore;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
@@ -99,7 +100,8 @@ public class DecompressingContentReader extends AbstractContentReader
       ReadableByteChannel rawChannel = getRawChannel();
       
       // Wrap this as an InputStream - Commons Compress is Stream not Channel based
-      InputStream rawInp = Channels.newInputStream(rawChannel);
+      // Note that Commons Compress needs to mark/reset a bit to identify
+      InputStream rawInp = new BufferedInputStream(Channels.newInputStream(rawChannel), 32);
       
       // Try to process it as a compressed stream
       try
