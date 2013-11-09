@@ -74,7 +74,10 @@ public class CompressingContentStore implements ContentStore, InitializingBean
    @Override
    public ContentReader getReader(String contentUrl)
    {
+      // Get the real reader
       ContentReader reader = realContentStore.getReader(contentUrl);
+      
+      // Wrap it, 
       if (shouldCompress(reader))
       {
          logger.debug("Trying as compressed: " + contentUrl);
@@ -133,7 +136,16 @@ public class CompressingContentStore implements ContentStore, InitializingBean
       }
       
       // Check the mimetype
-      if (reader.getMimetype() != null && compressMimeTypes.contains(reader.getMimetype()))
+      return shouldCompress(reader.getMimetype());
+   }
+   /**
+    * Should the content be compressed?
+    * This will be based on the Mime Type supplied
+    */
+   protected boolean shouldCompress(String mimeType)
+   {
+      // Check the mimetype
+      if (mimeType != null && compressMimeTypes.contains(mimeType))
       {
          return true;
       }
