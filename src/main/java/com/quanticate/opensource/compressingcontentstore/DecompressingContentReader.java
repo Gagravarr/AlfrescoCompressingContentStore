@@ -22,6 +22,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.Locale;
 
 import org.alfresco.repo.content.AbstractContentReader;
+import org.alfresco.repo.content.ContentHelper;
 import org.alfresco.service.cmr.repository.ContentIOException;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.apache.commons.compress.compressors.CompressorException;
@@ -36,28 +37,68 @@ import org.apache.commons.logging.LogFactory;
  */
 public class DecompressingContentReader extends AbstractContentReader
 {
-   private static Log logger = LogFactory.getLog(DecompressingContentReader.class);
+   private static final Log logger = LogFactory.getLog(DecompressingContentReader.class);
 
-   private ContentReader realContentReader;
+   private final ContentReader realContentReader;
+   private final AbstractContentReader realContentReaderA;
 
    public DecompressingContentReader(ContentReader realContentReader)
    {
       super(realContentReader.getContentUrl());
       this.realContentReader = realContentReader;
+      
+      // We can shortcut some things if we're wrapping an AbstractContentReader
+      if (realContentReader instanceof AbstractContentReader)
+      {
+         this.realContentReaderA = (AbstractContentReader)realContentReader;
+      }
+      else
+      {
+         this.realContentReaderA = null;
+      }
    }
 
    @Override
    protected ContentReader createReader() throws ContentIOException
    {
-      return new DecompressingContentReader(realContentReader.getReader());
+      ContentReader toWrap = null;
+      
+      // If it's an AbstractContentReader, call createReader on that
+      if (realContentReaderA != null)
+      {
+         toWrap = ContentHelper.callCreateReader(realContentReaderA);
+      }
+      else
+      {
+         toWrap = realContentReader.getReader();
+      }
+      
+      // Wrap the new reader with ourselves
+      return new DecompressingContentReader(toWrap);
+   }
+   
+   protected ReadableByteChannel getRawChannel()
+   {
+      ReadableByteChannel rawChannel = null;
+      if (realContentReaderA != null)
+      {
+         rawChannel = ContentHelper.callGetDirectReadableChannel(realContentReaderA);
+      }
+      else
+      {
+         rawChannel = realContentReader.getReadableChannel();
+      }
+      return rawChannel;
    }
 
    @Override
    protected ReadableByteChannel getDirectReadableChannel()
          throws ContentIOException
    {
-      // Read the raw bytes
-      ReadableByteChannel rawChannel = realContentReader.getReadableChannel();
+      // Get a Channel onto the real data
+      ReadableByteChannel rawChannel = getRawChannel();
+      
+      // Wrap this as an InputStream - Commons Compress is Stream not Channel based
       InputStream rawInp = Channels.newInputStream(rawChannel);
       
       // Try to process it as a compressed stream
@@ -85,7 +126,7 @@ public class DecompressingContentReader extends AbstractContentReader
       }
       
       logger.debug("Using raw form for " + getContentUrl());
-      return realContentReader.getReadableChannel();
+      return getRawChannel();
    }
    
    @Override

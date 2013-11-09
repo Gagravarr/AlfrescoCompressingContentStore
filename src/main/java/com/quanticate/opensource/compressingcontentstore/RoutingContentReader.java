@@ -15,20 +15,13 @@
 ==================================================================== */
 package com.quanticate.opensource.compressingcontentstore;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Locale;
 
-import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.repo.content.AbstractContentReader;
+import org.alfresco.repo.content.ContentHelper;
 import org.alfresco.repo.content.ContentStore;
 import org.alfresco.service.cmr.repository.ContentIOException;
 import org.alfresco.service.cmr.repository.ContentReader;
-import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorInputStream;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,6 +39,7 @@ public class RoutingContentReader extends AbstractContentReader
 
    private final CompressingContentStore contentStore;
    private final ContentReader realContentReader;
+   private final AbstractContentReader realContentReaderA;
    private DecompressingContentReader decompressingContentReader;
    
    private Boolean shouldDecompress = null;
@@ -55,6 +49,30 @@ public class RoutingContentReader extends AbstractContentReader
       super(realContentReader.getContentUrl());
       this.realContentReader = realContentReader;
       this.contentStore = contentStore;
+      
+      // We can shortcut some things if we're wrapping an AbstractContentReader
+      if (realContentReader instanceof AbstractContentReader)
+      {
+         this.realContentReaderA = (AbstractContentReader)realContentReader;
+      }
+      else
+      {
+         this.realContentReaderA = null;
+      }
+   }
+   
+   protected ContentReader createRawReader() throws ContentIOException
+   {
+      if (realContentReaderA != null)
+      {
+         // Use a createReader call
+         return ContentHelper.callCreateReader(realContentReaderA);
+      }
+      else
+      {
+         // A getReader call will have to do
+         return realContentReader.getReader();
+      }
    }
 
    @Override
@@ -67,12 +85,12 @@ public class RoutingContentReader extends AbstractContentReader
       }
       if (shouldDecompress == Boolean.FALSE)
       {
-         return realContentReader.getReader();
+         return createRawReader();
       }
       
       // Otherwise give a new one of ourselves, to
       //  allow for a later decision
-      return new RoutingContentReader(realContentReader.getReader(), contentStore);
+      return new RoutingContentReader(createRawReader(), contentStore);
    }
 
    @Override
@@ -86,7 +104,14 @@ public class RoutingContentReader extends AbstractContentReader
       }
       if (shouldDecompress == Boolean.FALSE)
       {
-         return realContentReader.getReadableChannel();
+         if (realContentReaderA != null)
+         {
+            return ContentHelper.callGetDirectReadableChannel(realContentReaderA);
+         }
+         else
+         {
+            return realContentReader.getReadableChannel();
+         }
       }
 
       // Oh dear, we don't know the mimetype!
@@ -113,21 +138,26 @@ public class RoutingContentReader extends AbstractContentReader
    }
 
    @Override
-   public void setEncoding(String encoding)
-   {
-      super.setEncoding(encoding);
-      realContentReader.setEncoding(encoding);
-   }
-   @Override
-   public void setLocale(Locale locale)
-   {
-      super.setLocale(locale);
-      realContentReader.setLocale(locale);
-   }
-   @Override
    public void setMimetype(String mimetype)
    {
       super.setMimetype(mimetype);
-      realContentReader.setMimetype(mimetype);
+      
+      // Now decide on DeCompressing vs Normal
+      if (contentStore.shouldCompress(mimetype))
+      {
+         // We need to decompress!
+         shouldDecompress = Boolean.TRUE;
+         
+         // Create the wrapping decompressing reader
+         decompressingContentReader = new DecompressingContentReader(realContentReader);
+         decompressingContentReader.setMimetype(mimetype);
+         decompressingContentReader.setEncoding(getEncoding());
+         decompressingContentReader.setLocale(getLocale());
+      }
+      else
+      {
+         // We're not compressing
+         shouldDecompress = Boolean.FALSE;
+      }
    }
 }
